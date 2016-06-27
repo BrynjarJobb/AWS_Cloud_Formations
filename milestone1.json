@@ -1,0 +1,105 @@
+{
+
+	"Description" : "JSON string",
+
+	"Resources" : {
+	
+	
+		"VPCMadeFromJson" : {
+			"Type" : "AWS::EC2::VPC",
+			"Properties" : {
+				"CidrBlock" : "192.168.0.0/16",
+				"EnableDnsSupport" : "true",
+				"EnableDnsHostnames" : "false",
+				"InstanceTenancy" : "default",
+				"Tags" : [ {"Key" : "foo", "Value" : "bar"} ]
+			}
+		}, 
+			
+		"SubnetFromJson" : {
+			"Type" : "AWS::EC2::Subnet", 
+			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
+				"CidrBlock" : "192.168.0.0/24",
+				"MapPublicIpOnLaunch" : "true",
+				"Tags" : [ {"Key" : "foo", "Value" : "bar"} ],
+				"VpcId" : { "Ref" : "VPCMadeFromJson" }
+			}
+		}, 
+		
+		"IGWFromJson" : {
+			"Type" : "AWS::EC2::InternetGateway", 
+			"Properties" : {
+				"Tags" : [ { "Key" : "foo", "Value" : "bar" } ]
+			}
+		}, 
+		
+		"AttachIGW" : {
+			"Type" : "AWS::EC2::VPCGatewayAttachment", 
+			"Properties" : {
+				"InternetGatewayId" : {"Ref" : "IGWFromJson"},
+				"VpcId" : {"Ref" : "VPCMadeFromJson"}
+			}
+		}, 
+		
+		"RouteTableFromJson" : {
+			"Type" : "AWS::EC2::RouteTable",
+			"Properties" : {
+				"VpcId" : { "Ref" : "VPCMadeFromJson"}, 
+				"Tags" : [ { "Key" : "foo", "Value" : "bar" } ]
+			}
+		},   	
+		
+		"CreateRouteInTable" : {
+			"Type" : "AWS::EC2::Route", 
+			"Properties" : {
+				"DestinationCidrBlock" : "0.0.0.0/0",
+				"GatewayId" : { "Ref" : "IGWFromJson"},
+				"RouteTableId" : { "Ref" : "RouteTableFromJson" }
+			}
+		}, 
+
+		"SubnetRouteTableAssociation" : {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : { "Ref" : "RouteTableFromJson" }, 
+				"SubnetId" : { "Ref" : "SubnetFromJson" }
+			}
+		}, 	
+		
+		
+		"InstanceMadeFromJson": {
+			"Type" : "AWS::EC2::Instance", 
+			"Properties" : {
+				"ImageId" : "ami-c39604b0",
+				"InstanceType" : "t2.micro",
+				"SecurityGroups": [
+					{ "Ref" : "SecurityGroupMadeFromJson" }
+				],
+				"KeyName":  "Webserver_public_key"
+			}
+			
+		}, 
+
+		"SecurityGroupMadeFromJson": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "Enable PING and SSH access",
+				"SecurityGroupIngress": [
+				  {
+					"IpProtocol": "icmp",
+					"FromPort": "-1",
+					"ToPort": "-1",
+					"CidrIp": "0.0.0.0/0"
+				  },
+				  {
+					"IpProtocol": "tcp",
+					"FromPort": "22",
+					"ToPort": "22",
+					"CidrIp": "0.0.0.0/0"
+				  }
+				]
+			  }
+		}
+	} 
+}

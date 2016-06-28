@@ -1,0 +1,162 @@
+{
+
+	"Description" : "3VMer",
+
+	"Resources" : {
+	
+	
+		"VPC" : {
+			"Type" : "AWS::EC2::VPC",
+			"Properties" : {
+				"CidrBlock" : "192.168.0.0/16",
+				"EnableDnsSupport" : "true",
+				"EnableDnsHostnames" : "false",
+				"InstanceTenancy" : "default",
+				"Tags" : [ {"Key" : "foo", "Value" : "bar"} ]
+			}
+		}, 
+			
+		"PublicSubnet" : {
+			"Type" : "AWS::EC2::Subnet", 
+			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
+				"CidrBlock" : "192.168.0.0/24",
+				"MapPublicIpOnLaunch" : "true",
+				"Tags" : [ {"Key" : "foo", "Value" : "bar"} ],
+				"VpcId" : { "Ref" : "VPC" }
+			}
+		}, 
+		
+		"PrivateSubnet" : {
+			"Type" : "AWS::EC2::Subnet", 
+			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
+				"CidrBlock" : "192.168.1.0/24",
+				"MapPublicIpOnLaunch" : "false",
+				"Tags" : [ {"Key" : "foo", "Value" : "bar"} ],
+				"VpcId" : { "Ref" : "VPC" }
+			}
+		}, 
+		
+		"IGW" : {
+			"Type" : "AWS::EC2::InternetGateway", 
+			"Properties" : {
+				"Tags" : [ { "Key" : "foo", "Value" : "bar" } ]
+			}	
+		}, 
+		
+		"AttachIGW" : {
+			"Type" : "AWS::EC2::VPCGatewayAttachment", 
+			"Properties" : {
+				"InternetGatewayId" : {"Ref" : "IGW"},
+				"VpcId" : { "Ref" : "VPC" } 
+			}
+		}, 
+		
+		"PublicRouteTable" : {
+			"Type" : "AWS::EC2::RouteTable",
+			"Properties" : {
+				"VpcId" : { "Ref" : "VPC"}
+			}
+		},
+
+		"PrivateRouteTable" : {
+			"Type" : "AWS::EC2::RouteTable",
+			"Properties" : {
+				"VpcId" : { "Ref" : "VPC"}
+			}
+		},   
+		
+		"CreateRouteInTable" : {
+			"Type" : "AWS::EC2::Route", 
+			"Properties" : {
+				"DestinationCidrBlock" : "0.0.0.0/0",
+				"GatewayId" : { "Ref" : "IGW"},
+				"RouteTableId" : { "Ref" : "PublicRouteTable" }
+			}
+		}, 
+
+		"SubnetRouteTableAssociation" : {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : { "Ref" : "PublicRouteTable" }, 
+				"SubnetId" : { "Ref" : "PublicSubnet" }
+			}
+		}, 	
+		
+		"AssociateRouteTable" : {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : { "Ref" : "PrivateRouteTable" }, 
+				"SubnetId" : { "Ref" : "PrivateSubnet" }
+			}
+		}, 	
+		
+		
+		"EC2Instance": {
+			"Type" : "AWS::EC2::Instance", 
+			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
+				"ImageId" : "ami-50e67823",
+				"InstanceType" : "t2.micro",
+				"KeyName" :  "windows",
+				"SecurityGroupIds": [ { "Ref" : "PublicSecurityGroup" } ],
+				"SubnetId" : { "Ref" : "PublicSubnet" }
+			}
+			
+		}, 
+		
+		"EC2InstancePRIVATE1": {
+			"Type" : "AWS::EC2::Instance", 
+			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
+				"ImageId" : "ami-50e67823",
+				"InstanceType" : "t2.micro",
+				"KeyName" :  "windows",
+				"SecurityGroupIds": [ { "Ref" : "PublicSecurityGroup" } ],
+				"SubnetId" : { "Ref" : "PrivateSubnet" }
+			}	
+		}, 
+		
+		"EC2InstancePRIVATE2": {
+			"Type" : "AWS::EC2::Instance", 
+			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
+				"ImageId" : "ami-50e67823",
+				"InstanceType" : "t2.micro",
+				"KeyName" :  "windows",
+				"SecurityGroupIds": [ { "Ref" : "PublicSecurityGroup" } ],
+				"SubnetId" : { "Ref" : "PrivateSubnet" }
+				
+			}		
+		}, 
+
+		"PublicSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription" : "Enable PING and SSH access",
+				"VpcId" : { "Ref" : "VPC" }, 
+				"SecurityGroupIngress": [
+					{
+					"IpProtocol": "icmp",
+					"FromPort": "-1",
+					"ToPort": "-1",
+					"CidrIp": "0.0.0.0/0"
+					},
+				  {
+					"IpProtocol": "tcp",
+					"FromPort": "22",
+					"ToPort": "22",
+					"CidrIp": "0.0.0.0/0"
+				  },
+				  {
+					"IpProtocol": "tcp",
+					"FromPort": "3389",
+					"ToPort": "3389",
+					"CidrIp": "0.0.0.0/0"
+				  }
+				]
+			  }
+		}
+	} 
+}

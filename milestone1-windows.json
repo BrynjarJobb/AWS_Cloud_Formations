@@ -1,0 +1,96 @@
+{
+	"Resources" : {
+		"VPC" : {
+			"Type" : "AWS::EC2::VPC",
+			"Properties" : {
+				"CidrBlock" : "192.168.0.0/20",
+				"EnableDnsSupport" : true,
+				"EnableDnsHostnames" : false,
+				"InstanceTenancy" : "default"
+				}
+			},
+		"IG" : {
+			"Type" : "AWS::EC2::InternetGateway",
+			"Properties" : {
+			}
+		},
+
+		"Attach" : {
+			"Type" : "AWS::EC2::VPCGatewayAttachment",
+			"Properties" : {
+				"InternetGatewayId" : {"Ref" : "IG"},
+				"VpcId" : {"Ref" : "VPC"}
+			}
+		},
+		"RouteTable" : {
+			"Type" : "AWS::EC2::RouteTable",
+			"Properties" : {
+				"VpcId" : {"Ref" : "VPC"}
+			}
+		},
+		"Route" : {
+			"Type" : "AWS::EC2::Route",
+			"Properties" : {
+				"DestinationCidrBlock" : "0.0.0.0/0",
+				"GatewayId" : {"Ref" : "IG"},
+				"RouteTableId" : {"Ref" : "RouteTable"}
+			}
+		},
+		"Subnet" : {
+			"Type" : "AWS::EC2::Subnet",
+			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
+				"CidrBlock" : "192.168.15.0/24",
+				"MapPublicIpOnLaunch" : true,
+				"VpcId" : {"Ref" : "VPC"}
+			}
+		},
+		
+		"SubnetAssociation" : {
+			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties" : {
+				"RouteTableId" : {"Ref" : "RouteTable"},
+				"SubnetId" : {"Ref" : "Subnet"}
+			}
+		}, 
+		
+		"SG" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"GroupDescription" : "Public",
+				"VpcId" : {"Ref" : "VPC"},
+				"SecurityGroupIngress" : [ 
+				{
+					"IpProtocol" : "tcp",
+					"FromPort": "22",
+					"ToPort": "22",
+					"CidrIp" : "0.0.0.0/0"
+					},
+					{
+					"IpProtocol" : "icmp",
+					"FromPort": "-1",
+					"ToPort": "-1",
+					"CidrIp" : "0.0.0.0/0"
+					},
+										{
+					"IpProtocol" : "tcp",
+					"FromPort": "3389",
+					"ToPort": "3389",
+					"CidrIp" : "0.0.0.0/0"
+					}
+					]
+			}
+		},
+		"Instance" : {
+			"Type" : "AWS::EC2::Instance",
+			"Properties" : {
+				"ImageId" : "ami-50e67823",
+				"InstanceType" : "t2.micro",
+				"KeyName" : "Windows",
+				"SecurityGroupIds" : [ {"Ref" : "SG"} ],
+				"SourceDestCheck" : true,
+				"SubnetId" : {"Ref" : "Subnet"}
+			}	
+		}
+	}
+}

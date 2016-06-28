@@ -1,11 +1,11 @@
 {
 
-	"Description" : "JSON string",
+	"Description" : "En VM i et eget nett (VPC) og eget subnet (som har nett-tilgang, public). SSH-tilgang fra nett",
 
 	"Resources" : {
 	
 	
-		"VPCMadeFromJson" : {
+		"VPC" : {
 			"Type" : "AWS::EC2::VPC",
 			"Properties" : {
 				"CidrBlock" : "192.168.0.0/16",
@@ -16,18 +16,18 @@
 			}
 		}, 
 			
-		"SubnetFromJson" : {
+		"PublicSubnet" : {
 			"Type" : "AWS::EC2::Subnet", 
 			"Properties" : {
 				"AvailabilityZone" : "eu-west-1a",
-				"CidrBlock" : "192.168.0.0/24",
+				"CidrBlock" : "192.168.1.0/24",
 				"MapPublicIpOnLaunch" : "true",
 				"Tags" : [ {"Key" : "foo", "Value" : "bar"} ],
-				"VpcId" : { "Ref" : "VPCMadeFromJson" }
+				"VpcId" : { "Ref" : "VPC" }
 			}
 		}, 
 		
-		"IGWFromJson" : {
+		"IGW" : {
 			"Type" : "AWS::EC2::InternetGateway", 
 			"Properties" : {
 				"Tags" : [ { "Key" : "foo", "Value" : "bar" } ]
@@ -37,15 +37,15 @@
 		"AttachIGW" : {
 			"Type" : "AWS::EC2::VPCGatewayAttachment", 
 			"Properties" : {
-				"InternetGatewayId" : {"Ref" : "IGWFromJson"},
-				"VpcId" : {"Ref" : "VPCMadeFromJson"}
+				"InternetGatewayId" : {"Ref" : "IGW"},
+				"VpcId" : { "Ref" : "VPC" } 
 			}
 		}, 
 		
-		"RouteTableFromJson" : {
+		"RouteTable" : {
 			"Type" : "AWS::EC2::RouteTable",
 			"Properties" : {
-				"VpcId" : { "Ref" : "VPCMadeFromJson"}, 
+				"VpcId" : { "Ref" : "VPC"}, 
 				"Tags" : [ { "Key" : "foo", "Value" : "bar" } ]
 			}
 		},   	
@@ -54,44 +54,45 @@
 			"Type" : "AWS::EC2::Route", 
 			"Properties" : {
 				"DestinationCidrBlock" : "0.0.0.0/0",
-				"GatewayId" : { "Ref" : "IGWFromJson"},
-				"RouteTableId" : { "Ref" : "RouteTableFromJson" }
+				"GatewayId" : { "Ref" : "IGW"},
+				"RouteTableId" : { "Ref" : "RouteTable" }
 			}
 		}, 
 
 		"SubnetRouteTableAssociation" : {
 			"Type" : "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties" : {
-				"RouteTableId" : { "Ref" : "RouteTableFromJson" }, 
-				"SubnetId" : { "Ref" : "SubnetFromJson" }
+				"RouteTableId" : { "Ref" : "RouteTable" }, 
+				"SubnetId" : { "Ref" : "PublicSubnet" }
 			}
 		}, 	
 		
 		
-		"InstanceMadeFromJson": {
+		"EC2Instance": {
 			"Type" : "AWS::EC2::Instance", 
 			"Properties" : {
+				"AvailabilityZone" : "eu-west-1a",
 				"ImageId" : "ami-c39604b0",
 				"InstanceType" : "t2.micro",
-				"SecurityGroups": [
-					{ "Ref" : "SecurityGroupMadeFromJson" }
-				],
-				"KeyName":  "Webserver_public_key"
+				"KeyName" :  "Webserver_public_key",
+				"SecurityGroupIds": [ { "Ref" : "PublicSecurityGroup" } ],
+				"SubnetId" : { "Ref" : "PublicSubnet" }
 			}
 			
 		}, 
 
-		"SecurityGroupMadeFromJson": {
+		"PublicSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
-				"GroupDescription": "Enable PING and SSH access",
+				"GroupDescription" : "Enable PING and SSH access",
+				"VpcId" : { "Ref" : "VPC" }, 
 				"SecurityGroupIngress": [
-				  {
+					{
 					"IpProtocol": "icmp",
 					"FromPort": "-1",
 					"ToPort": "-1",
 					"CidrIp": "0.0.0.0/0"
-				  },
+					},
 				  {
 					"IpProtocol": "tcp",
 					"FromPort": "22",

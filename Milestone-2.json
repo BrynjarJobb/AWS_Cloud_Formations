@@ -130,7 +130,7 @@
 		"InstanceA" : {
 			"Type" : "AWS::EC2::Instance",
 			"Properties" : {
-				"ImageId" : "ami-c39604b0",
+				"ImageId" : "ami-5b65ff28",
 				"InstanceType" : "t2.micro",
 				"KeyName" : "publicKey",
 				"SecurityGroupIds" : [ {"Ref" : "SGpublic"} ],
@@ -144,7 +144,7 @@
 			"Properties" : {
 				"ImageId" : "ami-c39604b0",
 				"InstanceType" : "t2.micro",
-				"KeyName" : "key2",
+				"KeyName" : "ami",
 				"SecurityGroupIds" : [ {"Ref" : "SGprivate"} ],
 				"SourceDestCheck" : true,
 				"SubnetId" : {"Ref" : "SubnetB"}
@@ -156,7 +156,7 @@
 			"Properties" : {
 				"ImageId" : "ami-c39604b0",
 				"InstanceType" : "t2.micro",
-				"KeyName" : "key2",
+				"KeyName" : "ami",
 				"SecurityGroupIds" : [ {"Ref" : "SGprivate"} ],
 				"SourceDestCheck" : true,
 				"SubnetId" : {"Ref" : "SubnetC"}
